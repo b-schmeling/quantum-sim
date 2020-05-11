@@ -10,7 +10,6 @@ def generateStates(numqbits):
 class State:
     def __init__(self, qbits):
         self.numqbits = qbits
-        self.size = pow(2,qbits)
         self.data = []
         for x in range(0,qbits):
             a = Qubit()
@@ -42,9 +41,11 @@ class State:
         #and return combined qubits to separate positions
         q = self.data[qbitNum]
         qs = [qbitNum] #qs holds empty qubit positions to fill
-        for x in range(0, q.number):
-            if not len(self.data[x].data):
+        for x in range(0, self.numqbits):
+            if self.data[x].number == 0:
                 qs.append(x)
+            if len(qs) == q.number:
+                break
         tmpstate = random.choices(
             generateStates(q.number),
             weights=[x*x for x in q.data])
@@ -54,9 +55,11 @@ class State:
             if x == '0':
                 self.data[n].data = ZERO
                 self.data[n].number = 1
+                self.data[n].size = 2
             else:
                 self.data[n].data = ONE
                 self.data[n].number = 1
+                self.data[n].size = 2
         return tmpstate
 
     def Measure(self):
@@ -67,8 +70,8 @@ class State:
             #doubling is necessary due to combinations
         return ret
         
-    def SingleGate(self, qbitNum, gate, internalqbitNum=None):
-        matrix = gate
+    def SingleGate(self, gate, qbitNum, internalqbitNum=None):
+        matrix = gateDict[gate]
         q = self.data[qbitNum]
         if internalqbitNum is not None:
             #i.e., there is more than one qubit in that position
@@ -84,33 +87,30 @@ class State:
             matrix = CNot
         else:
             matrix = CNotReverse
-        self.DoubleGate(qbit, control, target, matrix)
+        self.DoubleGate(matrix, qbit, control, target)
         
 
     def X(self, qbitNum, internalqbitNum=None):
-        self.SingleGate(qbitNum, PauliX, internalqbitNum)
+        self.SingleGate('PauliX', qbitNum, internalqbitNum)
         
     def Y(self, qbitNum, internalqbitNum=None):
-        self.SingleGate(qbitNum, PauliY, internalqbitNum)
+        self.SingleGate('PauliY', qbitNum, internalqbitNum)
         
     def Z(self, qbitNum, internalqbitNum=None):
-        self.SingleGate(qbitNum, PauliZ, internalqbitNum)
+        self.SingleGate('PauliZ', qbitNum, internalqbitNum)
 
     def H(self, qbitNum, internalqbitNum=None):
-        self.SingleGate(qbitNum, Hadamard, internalqbitNum)
-    
-    def PhaseShift(self,qbitNum, angle):
-        self.SingleGate(qbitNum, Phase)
+        self.SingleGate('Hadamard', qbitNum, internalqbitNum)
 
-    def S(self,qbitNum, internalqbitNum=None):
-        self.SingleGate(qbitNum, Phase, internalqbitNum)        
+    def S(self, qbitNum, internalqbitNum=None):
+        self.SingleGate('Phase', qbitNum, internalqbitNum)        
     
-    def T(self,qbitNum, internalqbitNum=None):
-        self.SingleGate(qbitNum, OpT, internalqbitNum)
+    def T(self, qbitNum, internalqbitNum=None):
+        self.SingleGate('OpT', qbitNum, internalqbitNum)
 
-    def DoubleGate(self, qbit, pos1, pos2, gate):
+    def DoubleGate(self, gate, qbit, pos1, pos2):
         #must be consecutive and combined
-        matrix = gate
+        matrix = gateDict[gate]
         q = self.data[qbit]
         for x in range(0,min(pos1, pos2)):
             matrix = kron(matrix, I)
@@ -119,9 +119,34 @@ class State:
         self.data[qbit].data = matrix.dot(q.data)
 
     def Swap(qbit, pos1, pos2):
-        self.DoubleGate(qbit, pos1, pos2, Swap)
+        self.DoubleGate('Swap',qbit, pos1, pos2)
 
     def printState(self):
         for num in self.data:
             print("real: %f imaginary: %f" % (num.real, num.imag))
+
+    def horizontalString(self):
+        numLines = max([q.size for q in self.data])
+        lines = []
+        for x in range(0,numLines):
+            lines.append([])
+        for qbit in self.data:
+            indx = 0
+            for entry in qbit.data:
+                lines[indx].append(entry)
+                indx += 1
+            for l in range(indx, numLines):
+                lines[indx].append([])
+                indx += 1
+        ret = []
+        for l in lines:
+            tmp = []
+            for entry in l:
+                if len(entry) == 0:
+                    tmp.append("[          ]")
+                else:
+                    tmp.append("[%.2f+%.2fj]" % (entry.real, entry.imag))
+            ret.append(tmp)
+        return ret
+        
         

@@ -34,3 +34,13 @@ CNotReverse = array([[1,0,0,0],[0,1,0,0],[0,0,0,1],[0,0,1,0]])
 CNot = array([[1,0,0,0],[0,0,0,1],[0,0,1,0],[0,1,0,0]])
 
 I = array([[1,0],[0,1]])
+
+gateDict = {'PauliX': PauliX,
+            'PauliY': PauliY,
+            'PauliZ': PauliZ,
+            'Hadamard': Hadamard,
+            'Phase': Phase,
+            'T': OpT,
+            'Swap': Swap,
+            'CnotReverse': CNotReverse,
+            'CNot': CNot}
