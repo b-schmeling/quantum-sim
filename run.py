@@ -8,10 +8,14 @@ class Run:
         self.state = State(qbits)
         self.circuit = []
 
+    def __str__(self):
+        return str(self.state)
+
     def addToCircuit(self, gatetype, *args):
         if gatetype == Gatetype.MEASURE:
             self.circuit.append(ft.partial(self.state.M, *args))
         elif gatetype == Gatetype.COMBINE:
+            args = args[1:]
             self.circuit.append(ft.partial(self.state.combine, *args))
         elif gatetype == Gatetype.SINGLE:
             self.circuit.append(ft.partial(self.state.SingleGate, *args))
@@ -19,7 +23,6 @@ class Run:
             self.circuit.append(ft.partial(self.state.DoubleGate, *args))
         elif gatetype == Gatetype.MEASUREALL:
             self.circuit.append(ft.partial(self.state.Measure))
-            
         
     def runCircuit(self):
         print("Initial State:")
@@ -40,10 +43,12 @@ class Run:
         return results
 
     def save(self, filename):
+        #only in linux because of forward slash
         with open(filename, 'wb') as f:
             pickle.dump((self.state, self.circuit), f)
 
     def load(self, filename):
+        #only works in linux
         with open(filename, 'rb') as f:
             x = pickle.load(f)
             self.state = x[0]
